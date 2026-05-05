@@ -31,3 +31,21 @@
 - 토큰 값은 출력하거나 이 문서에 저장하지 않았습니다.
 - 성공한 요청은 인증된 사용자의 저장소를 생성하는 GitHub REST API 엔드포인트를 사용했습니다.
 - 마지막 문제는 Codex 프로세스 환경에 이전 토큰이 남아 있었기 때문에 발생했으며, 사용자 환경변수에 저장된 최신 값을 우선해서 읽는 방식으로 해결했습니다.
+
+## Troubleshooting
+
+### 한글 인코딩 깨짐
+
+GitHub에 한국어 Markdown 파일을 업로드한 뒤 한글이 `Codex ?�?μ냼 ?앹꽦 ?붿빟`처럼 깨져 보이는 문제가 있었습니다.
+
+원인은 PowerShell의 `Get-Content`가 UTF-8 한글 파일을 잘못 해석한 뒤, 깨진 문자열을 다시 Base64로 변환해 GitHub API에 업로드했기 때문입니다.
+
+해결 방법은 파일을 문자열로 읽지 않고, 원본 바이트를 그대로 읽어 Base64로 변환하는 것입니다.
+
+```powershell
+$content = [Convert]::ToBase64String(
+    [System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath 'REPOSITORY_CREATION_SUMMARY.md'))
+)
+```
+
+이 방식으로 다시 덮어쓰기 커밋한 뒤 GitHub에서 한글이 정상적으로 표시되었습니다.
